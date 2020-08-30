@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe</title>
+    <style>
+        /*inline-block 默认是 baseline 对齐，纵向对齐方式改成 middle*/
+        /*font-size:50px line-height:100px */
+        /*如果用 icon-font 和 emoji 来表示：*/
+        /*text-align:center 帮助我们水平居中，line-height 和父元素的高度相同就可以帮助我们垂直居中*/
+        .cell{
+            width: 100px;
+            height: 100px;
+            display: inline-block;
+            background-color: burlywood;
+            border: solid 1px white;
+            vertical-align: middle;
+
+            font-size:50px;
+            line-height: 100px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div id="board"></div>
+<script>
+    //第一步：绘制棋盘 show()
+    //1.二维数组表示棋盘，每个棋盘格有三种状态，空 圈 叉
+    //2. show() 绘制棋盘，双层 for 循环创建棋盘，
+    // Dom API:
+    // document.getElementById();
+    // document.createElement();
+    // dom 实例.classList.add()
+    // dom 实例.innerText()
+    // dom 实例.appendChild()
+
+    //第二步：事件交互 move()
+    //1.dom 实例.addEventListener()，这里注意:let 和 var 的区别
+
+    //第三步：判断输赢 check()
+
+    //第四步：AI检查是不是要赢
+
+    //第五步：完美 AI：第一层策略：我要赢 第二层策略：别输 第三层策略：…… 棋谱
+
+    // 棋盘的值
+    let pattern = [
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0
+    ];
+    // 全局默认值
+    let color = 1;
+    // 绘制棋盘
+    function show(){
+
+        let board = document.getElementById('board');
+        //清除棋盘
+        board.innerHTML = '';
+
+        for(let i=0;i<3;i++){
+            for(let j=0;j<3;j++){
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.innerText =
+                    pattern[i * 3 + j] === 1
+                        ? '🐷' :
+                    pattern[i * 3 + j] === 2
+                        ? '🐯' :
+                        '';
+                cell.addEventListener('click',()=>{move(i,j)})
+                board.appendChild(cell)
+            }
+            board.appendChild(document.createElement('br'))
+        }
+    }
+    //全局变量从 2-》1 从 1-》2 ，任何满足交换律的运算都可以做到，也可以用除法，1-》2， 2-》1
+
+    //用户下
+    function move(x,y){
+        //pattern[y][x]=color//这里 y 和 x 的位置
+
+        pattern[x * 3 + y] = color;
+        if (check(pattern, color)) {
+            alert(color === 2 ? "🐯 is winner!" : "🐷️ is winner!");
+        }
+        color = 3 - color;
+        show();
+        // if (willWin(pattern, color)) {
+        //     console.log(color === 2 ? "🐯 will win!" : "🐷 will win!")
+        // }
+        // console.log(bestChoice(pattern,color).des);
+        computerMove()
+    }
+
+    //AI 下
+    function computerMove()  {
+        let choice = bestChoice(pattern, color);
+        if (choice.point) {
+            console.log(choice.point);
+            pattern[choice.point[1] * 3 + choice.point[0]] = color
+        }
+        if (check(pattern, color)) {
+            alert(color === 2 ? "🐯 is winner!" : "🐷️ is winner!");
+        }
+        color = 3 - color;
+        show();
+    }
+
+    //检查三行三列和斜行（横纵坐标相等），小技巧：使用 let 做块级作用域{}
+    //检测胜负
+    function check(pattern, color){
+        //检查横行
+        for (let i = 0; i < 3; i++) {
+            let win = true;
+            for (let j = 0; j < 3; j++) {
+                if (pattern[i * 3 + j] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }
+        //检查纵列
+        for (let i = 0; i < 3; i++) {
+            let win = true;
+            for (let j = 0; j < 3; j++) {
+                if (pattern[j * 3 + i] !== color) {
+                    win = false;
+                }
+            }
+            if (win) {
+                return true;
+            }
+        }
+
+        //检查左上到右下（横纵坐标都相等）
+        {
+            let win = true
+            for (let i = 0; i < 3; i++) {
+                if (pattern[i * 3 + i] !== color) {
+                    win = false
+                }
+            }
+            if (win) {
+                return true
+            }
+        }
+        //检查右上到左下
+        {
+            let win = true
+            for (let i = 0; i < 3; i++) {
+                if (pattern[i * 3 + 2 - i] !== color) {
+                    win = false
+                }
+            }
+            if (win) {
+                return true
+            }
+        }
+        return false;
+    }
+    // function clone(pattern) {
+    //     return JSON.parse(JSON.stringify(pattern));
+    // }
+
+    //原型方法
+    function clone(pattern) {
+        return Object.create(pattern);
+    }
+    //结果预判
+    function willWin(pattern, color) {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (pattern[i * 3 + j]) {
+                    continue
+                }
+                let tmp = clone(pattern)
+                tmp[i * 3 + j] = color
+                if (check(tmp, color)) {
+                    return [j, i]
+                }
+            }
+        }
+        return null
+    }
+
+    //最好的下棋选择
+    function bestChoice(pattern, color) {
+        //看看赛点
+        let p = willWin(pattern, color);
+        if (p) {
+            return {
+                point: p,
+                result: 1
+            }
+        }
+        //找最差的情况
+        let result =-2;
+        let point = null
+        outer: for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (pattern[i * 3 + j]) continue;
+                let tmp = clone(pattern);
+                tmp[i * 3 + j] = color;
+                let r = bestChoice(tmp, 3 - color);
+
+                if (-r.result >= result) {
+                    result = -r.result;
+                    point = [i, j];
+                }
+
+                if (result === 1) {
+                    break outer;
+                }
+            }
+        }
+
+        return {
+            point: point,
+            result: point ? result : 0
+        }
+    }
+    show(pattern)
+    console.log(bestChoice(pattern,color))
+
+</script>
+
+
+<!--<script src="test.js"></script>-->
+</body>
+</html>
